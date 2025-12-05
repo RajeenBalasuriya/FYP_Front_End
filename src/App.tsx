@@ -12,7 +12,7 @@ function App() {
       <div className="relative min-h-screen">
         
         {/* THEME TOGGLE BUTTON (top-right) */}
-        <div className="absolute top-4 right-4 z-50">
+        <div className="absolute top-2 right-4 z-50">
           <ModeToggle />
         </div>
 
