@@ -1,6 +1,6 @@
 import { GalleryVerticalEnd } from "lucide-react";
 
-import { LoginForm } from "@/components/login-form";
+import { LoginForm } from "@/components/sign-in-up/login-form";
 import loginImage from "@/assets/login.jpg";
 
 export default function LoginPage() {
@@ -23,8 +23,8 @@ export default function LoginPage() {
       </div>
       <div className="relative hidden lg:flex items-center justify-center overflow-hidden group bg-muted">
         {/* LEFT EDGE WHITE GRADIENT BLEND (FIXES SHARP LINE) */}
-       <div
-  className="
+        <div
+          className="
     pointer-events-none
     absolute inset-y-0 left-0 w-40
     bg-gradient-to-r
@@ -33,7 +33,7 @@ export default function LoginPage() {
     to-transparent
     z-20
   "
-></div>
+        ></div>
 
         {/* HOVER DARK OVERLAY */}
         <div

@@ -1,24 +1,21 @@
-import "./App.css";
-import LoginPage from './app/login/page'
-import SignUpPage from './app/signup/page'
-import DashboardPage from "./app/dashboard/page";
-import { ModeToggle } from "./components/mode-toggle";
-import { ThemeProvider } from "./components/theme-provider";
-
+import { BrowserRouter } from "react-router-dom";
+import { ModeToggle } from "./components/theme-change/mode-toggle";
+import { ThemeProvider } from "./components/theme-change/theme-provider";
+import { AppRouter } from "./routes/router";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <div className="relative min-h-screen">
-        
-        {/* THEME TOGGLE BUTTON (top-right) */}
-        <div className="absolute top-2 right-4 z-50">
-          <ModeToggle />
-        </div>
+      <BrowserRouter>
+        <div className="relative min-h-screen">
+          {/* THEME TOGGLE BUTTON (top-right) */}
+          <div className="absolute top-2 right-4 z-50">
+            <ModeToggle />
+          </div>
 
-        {/* MAIN PAGE */}
-        <DashboardPage/>
-      </div>
+          <AppRouter />
+        </div>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

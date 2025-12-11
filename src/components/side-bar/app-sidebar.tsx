@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-
   BookOpen,
   Bot,
   Frame,
@@ -10,12 +9,16 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  BrainCircuit,
+  Cpu,
+  Sparkles,
 } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { useAuth } from "@/context/auth-context"
+import { NavMain } from "@/components/side-bar/nav-main"
+import { NavProjects } from "@/components/side-bar/nav-projects"
+import { NavUser } from "@/components/side-bar/nav-user"
+import { TeamSwitcher } from "@/components/side-bar/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -24,13 +27,8 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+
 const data = {
-  user: {
-    name: "sample user",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Weather  Former",
@@ -66,15 +64,18 @@ const data = {
       items: [
         {
           title: "Model A",
-          url: "#",
+          url: "/dashboard/file-upload",
+          icon: BrainCircuit,
         },
         {
           title: "Model B",
-          url: "#",
+          url: "/dashboard/model-b",
+          icon: Cpu,
         },
         {
           title: "Model C",
           url: "#",
+          icon: Sparkles,
         },
       ],
     },
@@ -141,6 +142,14 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useAuth();
+
+  const userData = {
+    name: user?.userName || "Guest",
+    email: user?.email || "guest@example.com",
+    avatar: "/avatars/shadcn.jpg", // Fallback or dynamic if available
+  };
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -151,7 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects Activity={data.Activity} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
