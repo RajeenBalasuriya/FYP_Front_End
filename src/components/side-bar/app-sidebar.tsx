@@ -4,7 +4,6 @@ import * as React from "react"
 import {
   BookOpen,
   Bot,
-  Frame,
   GalleryVerticalEnd,
   PieChart,
   Settings2,
@@ -12,6 +11,7 @@ import {
   BrainCircuit,
   Cpu,
   Sparkles,
+  FolderClock,
 } from "lucide-react"
 
 import { useAuth } from "@/context/auth-context"
@@ -128,9 +128,9 @@ const data = {
   ],
   Activity: [
     {
-      name: "Folder Management",
-      url: "#",
-      icon: Frame,
+      name: "Job History",
+      url: "/dashboard/folder-management",
+      icon: FolderClock,
     },
     {
       name: "Analytics",

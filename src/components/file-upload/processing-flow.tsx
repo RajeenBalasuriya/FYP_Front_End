@@ -52,7 +52,8 @@ export function ProcessingFlow({ currentStep = 1, hasError = false, className }:
                         <div
                             className={cn(
                                 "h-full transition-all duration-500 ease-in-out",
-                                hasError ? "bg-destructive" : "bg-primary"
+                                hasError ? "bg-destructive" :
+                                    currentStep > steps.length ? "bg-green-500" : "bg-primary"
                             )}
                             style={{ width: `${Math.max(0, Math.min(100, ((currentStep - 1) / (steps.length - 1)) * 100))}%` }}
                         />
@@ -65,6 +66,7 @@ export function ProcessingFlow({ currentStep = 1, hasError = false, className }:
                     const isCurrent = step.id === currentStep;
                     const isActive = isCompleted || isCurrent;
                     const isErrorStep = hasError && isCurrent;
+                    const isSuccess = currentStep > steps.length;
 
                     return (
                         <div key={step.id} className="relative z-10 flex flex-col items-center group">
@@ -73,9 +75,11 @@ export function ProcessingFlow({ currentStep = 1, hasError = false, className }:
                                     "w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 bg-background",
                                     isErrorStep
                                         ? "border-destructive text-destructive shadow-[0_0_10px_-2px_rgba(239,68,68,0.5)] scale-110 ring-4 ring-destructive/10"
-                                        : isActive
-                                            ? "border-primary text-primary shadow-[0_0_10px_-2px_rgba(var(--primary),0.5)]"
-                                            : "border-muted-foreground/30 text-muted-foreground/30",
+                                        : isSuccess
+                                            ? "border-green-500 text-green-500 shadow-[0_0_10px_-2px_rgba(34,197,94,0.5)]"
+                                            : isActive
+                                                ? "border-primary text-primary shadow-[0_0_10px_-2px_rgba(var(--primary),0.5)]"
+                                                : "border-muted-foreground/30 text-muted-foreground/30",
                                     isCurrent && !hasError && "scale-110 ring-4 ring-primary/10"
                                 )}
                             >

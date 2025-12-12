@@ -23,6 +23,7 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
     const [isUploading, setIsUploading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showErrorDialog, setShowErrorDialog] = useState(false);
+    const [showSuccessDialog, setShowSuccessDialog] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFiles = (files: FileList | null) => {
@@ -48,7 +49,19 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
         setShowErrorDialog(false);
         setErrorMessage(null);
         setFile(null);
+        if (inputRef.current) {
+            inputRef.current.value = "";
+        }
         onError?.(false);
+        onStepChange?.(1);
+    };
+
+    const handleSuccessClose = () => {
+        setShowSuccessDialog(false);
+        setFile(null);
+        if (inputRef.current) {
+            inputRef.current.value = "";
+        }
         onStepChange?.(1);
     };
 
@@ -66,9 +79,17 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
             onStepChange?.(3);
             console.log("S3 key:", key);
 
+
+
             // Step 3-4: Save to backend
-            await saveToBackend(key);
+            await saveToBackend(key, file.name);
             onStepChange?.(4);
+
+
+
+            // Step 5: Success
+            onStepChange?.(5);
+            setShowSuccessDialog(true);
         } catch (error) {
             console.error(error);
             showError(error instanceof Error ? error.message : "Unexpected error during upload. Please try again.");
@@ -91,6 +112,40 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
                     <AlertDialogFooter>
                         <AlertDialogAction onClick={handleTryAgain}>
                             Try Again
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Drag + Drop Container */}
+
+            {/* Success Dialog */}
+            <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+                <AlertDialogContent className="sm:max-w-md">
+                    <AlertDialogHeader className="items-center text-center">
+                        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
+                            <svg
+                                className="w-6 h-6 text-green-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </svg>
+                        </div>
+                        <AlertDialogTitle>Job Accepted!</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center">
+                            Your job has been successfully accepted. You can view your job status from the dashboard.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center">
+                        <AlertDialogAction onClick={handleSuccessClose} className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
+                            Close
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -144,7 +199,7 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
                     ) : (
                         <p className="text-sm">
                             <span className="font-medium text-foreground">Drag & drop</span>{" "}
-                            your file here or click to browse
+                            degraded image here or click to browse
                         </p>
                     )}
                 </div>
@@ -159,8 +214,8 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
                 {isUploading
                     ? "Uploading..."
                     : file
-                        ? `Upload: ${file.name}`
-                        : "Upload File"}
+                        ? `Restore: ${file.name}`
+                        : "Start Restoration"}
             </Button>
         </div>
     );

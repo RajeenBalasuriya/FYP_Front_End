@@ -37,17 +37,34 @@ export async function uploadToS3(file: File): Promise<{ key: string }> {
 
     const base64 = await toBase64(file);
 
-    const response = await axios.post<{ key: string }>(LAMBDA_URL, {
-        file: base64,
-        ext,
-    });
+    // Get token from localStorage
+    const token = localStorage.getItem("token");
+    if (!token) {
+        throw new Error("No auth token found");
+    }
+
+    const response = await axios.post<{ key: string }>(
+        LAMBDA_URL,
+        {
+            file: base64,
+            ext,
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
 
     return { key: response.data.key };
 }
 
+
 /**
  * Sends the S3 key to the backend for storage
  */
-export async function saveToBackend(key: string): Promise<void> {
-    await api.post("/images", { key });
+export async function saveToBackend(key: string, imageName: string): Promise<void> {
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await api.post("/jobs", { key, imageName });
 }
