@@ -1,12 +1,30 @@
 import { useState } from "react"
+import { useParams } from "react-router-dom"
 import { FileDropzone } from "@/components/file-upload/uploader"
 import { ProcessingFlow } from "@/components/file-upload/processing-flow"
 import { CloudRain, Wand2 } from "lucide-react"
 
+type ModelType = "initial" | "trained" | "final";
+
+const MODEL_DISPLAY_NAMES: Record<ModelType, string> = {
+    initial: "Initial Model",
+    trained: "Trained Model",
+    final: "Final Model",
+};
+
 export default function UploadPage() {
+    const { modelType } = useParams<{ modelType: ModelType }>();
     // Tracks the current step in the processing flow (1-4)
     const [currentStep, setCurrentStep] = useState(1);
     const [hasError, setHasError] = useState(false);
+
+    // Default to 'initial' if invalid model type
+    const validModelType: ModelType =
+        modelType && ["initial", "trained", "final"].includes(modelType)
+            ? modelType as ModelType
+            : "initial";
+
+    const modelDisplayName = MODEL_DISPLAY_NAMES[validModelType];
 
     return (
         <main className="min-h-screen bg-background text-foreground flex justify-center">
@@ -18,9 +36,14 @@ export default function UploadPage() {
                         <div className="p-3 bg-primary/10 rounded-xl">
                             <Wand2 className="w-8 h-8 text-primary" />
                         </div>
-                        <h1 className="text-4xl font-extrabold tracking-tight">
-                            Image Restoration
-                        </h1>
+                        <div>
+                            <h1 className="text-4xl font-extrabold tracking-tight">
+                                Image Restoration
+                            </h1>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Using: <span className="font-medium text-foreground">{modelDisplayName}</span>
+                            </p>
+                        </div>
                     </div>
                     <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
                         Upload weather-degraded images to restore clarity and detail using our advanced AI models.
@@ -50,6 +73,7 @@ export default function UploadPage() {
 
                     {/* Upload Component */}
                     <FileDropzone
+                        modelType={validModelType}
                         onStepChange={setCurrentStep}
                         onError={setHasError}
                     />
@@ -58,3 +82,4 @@ export default function UploadPage() {
         </main>
     );
 }
+

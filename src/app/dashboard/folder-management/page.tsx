@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import api from "@/lib/api";
 import {
     Table,
@@ -10,16 +11,27 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, History, CheckCircle2, Clock } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, RefreshCw, History, CheckCircle2, Clock, Eye, AlertCircle, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const LAMBDA_BASE_URL = import.meta.env.VITE_LAMBDA_BASE_URL || "https://xghdixt5x3.execute-api.ap-south-1.amazonaws.com";
 
 interface Job {
     id: number;
     imageName: string;
     key: string;
+    outputS3Key: string;
     createdAt: string;
     status: string;
     userId: number;
+    niqe?: number;
+    brisque?: number;
 }
 
 interface JobsResponse {
@@ -36,6 +48,13 @@ export default function JobHistoryPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [error, setError] = useState<string | null>(null);
     const [isRefresing, setIsRefresing] = useState(false);
+
+    const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+    const [restoredImageUrl, setRestoredImageUrl] = useState<string | null>(null);
+    const [isLoadingImages, setIsLoadingImages] = useState(false);
+    const [imageError, setImageError] = useState<string | null>(null);
 
     const fetchJobs = async (pageNumber: number) => {
         setIsLoading(true);
@@ -76,6 +95,43 @@ export default function JobHistoryPage() {
 
     const handleNext = () => {
         if (page < totalPages) setPage(page + 1);
+    };
+
+    const handleViewResults = async (job: Job) => {
+        setSelectedJob(job);
+        setIsDialogOpen(true);
+        setIsLoadingImages(true);
+        setImageError(null);
+        setOriginalImageUrl(null);
+        setRestoredImageUrl(null);
+
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("Authentication required.");
+
+            // Fetch original image signed URL
+            const origParams = new URLSearchParams({ key: job.key });
+            const origResponse = await axios.get(
+                `${LAMBDA_BASE_URL}/image/download?${origParams.toString()}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setOriginalImageUrl(origResponse.data.url);
+
+            // Fetch restored image signed URL
+            if (job.outputS3Key) {
+                const restParams = new URLSearchParams({ key: job.outputS3Key });
+                const restResponse = await axios.get(
+                    `${LAMBDA_BASE_URL}/image/download?${restParams.toString()}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setRestoredImageUrl(restResponse.data.url);
+            }
+        } catch (err: any) {
+            console.error("Failed to load results:", err);
+            setImageError(err.response?.data?.error || err.message || "Failed to load images from cloud.");
+        } finally {
+            setIsLoadingImages(false);
+        }
     };
 
     return (
@@ -137,6 +193,7 @@ export default function JobHistoryPage() {
                                 <TableHead className="font-bold">Image Name</TableHead>
                                 <TableHead className="font-bold">Status</TableHead>
                                 <TableHead className="font-bold text-right">Created At</TableHead>
+                                <TableHead className="font-bold text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
 
@@ -152,17 +209,18 @@ export default function JobHistoryPage() {
                                         <TableCell><div className="h-4 w-32 bg-muted rounded animate-pulse" /></TableCell>
                                         <TableCell><div className="h-6 w-16 bg-muted rounded-full animate-pulse" /></TableCell>
                                         <TableCell className="text-right"><div className="h-4 w-24 bg-muted rounded animate-pulse ml-auto" /></TableCell>
+                                        <TableCell className="text-right"><div className="h-8 w-24 bg-muted rounded animate-pulse ml-auto" /></TableCell>
                                     </TableRow>
                                 ))
                             ) : error ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-32 text-center text-destructive">
+                                    <TableCell colSpan={5} className="h-32 text-center text-destructive">
                                         {error}
                                     </TableCell>
                                 </TableRow>
                             ) : jobs.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
                                         No jobs found.
                                     </TableCell>
                                 </TableRow>
@@ -200,6 +258,21 @@ export default function JobHistoryPage() {
                                                 timeStyle: 'short'
                                             })}
                                         </TableCell>
+                                        <TableCell className="text-right">
+                                            {job.status === 'COMPLETED' ? (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleViewResults(job)}
+                                                    className="gap-2 shrink-0 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary transition-colors"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                    View Results
+                                                </Button>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground italic">N/A</span>
+                                            )}
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             )}
@@ -234,6 +307,126 @@ export default function JobHistoryPage() {
                     </div>
                 </div>
             </div>
+
+            {/* View Results Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden bg-background/95 backdrop-blur-xl border border-muted shadow-2xl">
+                    <DialogHeader className="p-5 border-b bg-muted/20">
+                        <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                            Restoration Pipeline Results
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="flex flex-col h-[75vh] md:h-[80vh] overflow-y-auto custom-scrollbar">
+                        {isLoadingImages ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground p-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                <p className="animate-pulse">Fetching high-resolution assets...</p>
+                            </div>
+                        ) : imageError ? (
+                            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-destructive p-12">
+                                <div className="p-4 bg-destructive/10 rounded-full">
+                                    <AlertCircle className="w-10 h-10" />
+                                </div>
+                                <h3 className="font-semibold text-lg">Load Failed</h3>
+                                <p className="text-sm opacity-90 max-w-md text-center">{imageError}</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                {/* Visual Splice */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x border-b">
+                                    {/* Left Pane - Original */}
+                                    <div className="relative isolate min-h-[40vh] bg-[#0A0A0A] flex flex-col items-center justify-center group overflow-hidden">
+                                        <div className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10 text-xs font-semibold text-white/90 shadow-xl">
+                                            Original Input
+                                        </div>
+                                        {originalImageUrl ? (
+                                            <img
+                                                src={originalImageUrl}
+                                                alt="Original input"
+                                                className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-[1.02]"
+                                            />
+                                        ) : (
+                                            <span className="text-muted-foreground italic">Missing Original Asset</span>
+                                        )}
+                                    </div>
+
+                                    {/* Right Pane - Restored */}
+                                    <div className="relative isolate min-h-[40vh] bg-[#000000] flex flex-col items-center justify-center group overflow-hidden pattern-dots pattern-white/5 pattern-size-4">
+                                        <div className="absolute top-4 left-4 z-10 px-3 py-1.5 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-full text-xs font-semibold text-primary shadow-xl flex items-center gap-1.5">
+                                            <Sparkles className="w-3.5 h-3.5" /> Output Generated
+                                        </div>
+                                        {restoredImageUrl ? (
+                                            <img
+                                                src={restoredImageUrl}
+                                                alt="Restored output"
+                                                className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-[1.02]"
+                                            />
+                                        ) : (
+                                            <span className="text-muted-foreground italic">Missing Restored Asset</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* IQA Metrics Ribbon */}
+                                <div className="px-6 pb-6 pt-2">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <div className="p-1.5 bg-primary/10 text-primary rounded-md shrink-0">
+                                            <History className="w-4 h-4" />
+                                        </div>
+                                        <span className="text-sm font-semibold text-foreground uppercase tracking-wide">Image Quality Evaluation (Blind)</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* NIQE Card */}
+                                        <div className="bg-muted/30 border rounded-xl p-5 hover:bg-muted/50 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-bold text-lg text-foreground tracking-tight">NIQE Score</h4>
+                                                {selectedJob?.niqe ? (
+                                                    <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/60">
+                                                        {Number(selectedJob.niqe).toFixed(3)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground italic text-sm">N/A</span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                <strong className="text-foreground/80">Natural Image Quality Evaluator.</strong> Measures unnatural distortions without a reference image. <span className="text-primary font-medium dark:text-emerald-400">Lower values indicate better quality</span> and more natural textures.
+                                            </p>
+                                        </div>
+
+                                        {/* BRISQUE Card */}
+                                        <div className="bg-muted/30 border rounded-xl p-5 hover:bg-muted/50 transition-colors">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-bold text-lg text-foreground tracking-tight">BRISQUE Score</h4>
+                                                {selectedJob?.brisque ? (
+                                                    <span className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-indigo-500 to-primary/60">
+                                                        {Number(selectedJob.brisque).toFixed(3)}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-muted-foreground italic text-sm">N/A</span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed">
+                                                <strong className="text-foreground/80">Blind/Referenceless Image Spatial Quality Evaluator.</strong> Assesses perceptual artifacts based on natural scene statistics. <span className="text-primary font-medium dark:text-emerald-400">Lower scores indicate less distortion.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {(!selectedJob?.niqe && !selectedJob?.brisque) && (
+                                        <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs rounded-lg flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4 shrink-0" />
+                                            Metrics were not successfully calculated for this job.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 }

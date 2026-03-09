@@ -1,7 +1,8 @@
 import axios from 'axios';
 import api from '@/lib/api';
 
-const LAMBDA_URL = import.meta.env.VITE_LAMBDA_UPLOAD_URL;
+const LAMBDA_BASE_URL = import.meta.env.VITE_LAMBDA_BASE_URL || "https://xghdixt5x3.execute-api.ap-south-1.amazonaws.com";
+const UPLOAD_URL = `${LAMBDA_BASE_URL}/image/upload`;
 
 /**
  * Converts a File to base64 string (without data:... prefix)
@@ -44,7 +45,7 @@ export async function uploadToS3(file: File): Promise<{ key: string }> {
     }
 
     const response = await axios.post<{ key: string }>(
-        LAMBDA_URL,
+        UPLOAD_URL,
         {
             file: base64,
             ext,
@@ -52,6 +53,7 @@ export async function uploadToS3(file: File): Promise<{ key: string }> {
         {
             headers: {
                 Authorization: `Bearer ${token}`,
+
             },
         }
     );
@@ -63,8 +65,14 @@ export async function uploadToS3(file: File): Promise<{ key: string }> {
 /**
  * Sends the S3 key to the backend for storage
  */
-export async function saveToBackend(key: string, imageName: string): Promise<void> {
+export async function saveToBackend(
+    key: string,
+    imageName: string,
+    modelUsed: "initial" | "trained" | "final",
+    outputS3Key: string | null,
+    mixWeather?: boolean
+): Promise<void> {
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    await api.post("/jobs", { key, imageName });
+    await api.post("/jobs", { key, imageName, modelUsed, outputS3Key, mixWeather });
 }

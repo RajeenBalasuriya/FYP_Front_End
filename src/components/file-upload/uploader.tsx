@@ -10,20 +10,24 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { uploadToS3, saveToBackend } from "./upload-utils";
 
 interface FileDropzoneProps {
+    modelType: "initial" | "trained" | "final";
     onStepChange?: (step: number) => void;
     onError?: (hasError: boolean) => void;
 }
 
-export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
+export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showErrorDialog, setShowErrorDialog] = useState(false);
     const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+    const [mixWeather, setMixWeather] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleFiles = (files: FileList | null) => {
@@ -81,8 +85,8 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
 
 
 
-            // Step 3-4: Save to backend
-            await saveToBackend(key, file.name);
+            // Step 3-4: Save to backend with model type and mix weather option
+            await saveToBackend(key, file.name, modelType, null, mixWeather);
             onStepChange?.(4);
 
 
@@ -203,6 +207,18 @@ export function FileDropzone({ onStepChange, onError }: FileDropzoneProps) {
                         </p>
                     )}
                 </div>
+            </div>
+
+            {/* Mixed Weather Toggle */}
+            <div className="flex items-center space-x-2 justify-center py-4">
+                <Switch
+                    id="mixWeather"
+                    checked={mixWeather}
+                    onCheckedChange={setMixWeather}
+                />
+                <Label htmlFor="mixWeather" className="cursor-pointer">
+                    Enable Mixed Weather Mode
+                </Label>
             </div>
 
             {/* Upload Button */}

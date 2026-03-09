@@ -24,6 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Check for token in URL query params (e.g., from GitHub OAuth redirect)
+        const params = new URLSearchParams(window.location.search);
+        const urlToken = params.get('token');
+
+        if (urlToken) {
+            localStorage.setItem('token', urlToken);
+            // Remove token from URL for security and clean UI
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+
         // Check for existing token on mount
         const token = localStorage.getItem('token');
         if (token) {

@@ -12,6 +12,8 @@ import {
   Cpu,
   Sparkles,
   FolderClock,
+  Image,
+  Pencil,
 } from "lucide-react"
 
 import { useAuth } from "@/context/auth-context"
@@ -44,17 +46,15 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Folder A",
-          url: "#",
+          title: "View My Gallery",
+          url: "/dashboard/view-gallery",
+          icon: Image,
         },
         {
-          title: "Folder B",
-          url: "#",
-        },
-        {
-          title: "Folder C",
-          url: "#",
-        },
+          title: "Edit My Gallery",
+          url: "/dashboard/edit-gallery",
+          icon: Pencil,
+        }
       ],
     },
     {
@@ -63,18 +63,18 @@ const data = {
       icon: Bot,
       items: [
         {
-          title: "Model A",
-          url: "/dashboard/file-upload",
+          title: "Initial Model",
+          url: "/dashboard/upload/initial",
           icon: BrainCircuit,
         },
         {
-          title: "Model B",
-          url: "/dashboard/model-b",
+          title: "Trained Model",
+          url: "/dashboard/upload/trained",
           icon: Cpu,
         },
         {
-          title: "Model C",
-          url: "#",
+          title: "Final Model",
+          url: "/dashboard/upload/final",
           icon: Sparkles,
         },
       ],
