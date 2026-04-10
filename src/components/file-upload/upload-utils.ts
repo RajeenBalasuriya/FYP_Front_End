@@ -28,15 +28,23 @@ export function getFileExtension(filename: string): string | undefined {
 }
 
 /**
- * Uploads a file to S3 via Lambda
+ * Uploads an array of files to S3 via Lambda
  */
-export async function uploadToS3(file: File): Promise<{ key: string }> {
-    const ext = getFileExtension(file.name);
-    if (!ext) {
-        throw new Error("Could not detect file extension");
-    }
+interface UploadKey {
+    key: string;
+    originalName: string;
+}
 
-    const base64 = await toBase64(file);
+export async function uploadBatchToS3(files: File[]): Promise<UploadKey[]> {
+    if (files.length === 0) return [];
+
+    const payloads = await Promise.all(
+        files.map(async (file) => ({
+            file: await toBase64(file),
+            ext: getFileExtension(file.name) || "jpg",
+            name: file.name
+        }))
+    );
 
     // Get token from localStorage
     const token = localStorage.getItem("token");
@@ -44,35 +52,33 @@ export async function uploadToS3(file: File): Promise<{ key: string }> {
         throw new Error("No auth token found");
     }
 
-    const response = await axios.post<{ key: string }>(
+    const response = await axios.post<{ uploaded: UploadKey[] }>(
         UPLOAD_URL,
-        {
-            file: base64,
-            ext,
-        },
-        {
-            headers: {
-                Authorization: `Bearer ${token}`,
-
-            },
-        }
+        { files: payloads },
+        { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    return { key: response.data.key };
+    return response.data.uploaded;
 }
 
-
 /**
- * Sends the S3 key to the backend for storage
+ * Sends the batch summary to the backend for storage
  */
-export async function saveToBackend(
-    key: string,
-    imageName: string,
+export async function saveBatchToBackend(
+    uploadedFiles: UploadKey[],
     modelUsed: "initial" | "trained" | "final",
-    outputS3Key: string | null,
     mixWeather?: boolean
 ): Promise<void> {
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    await api.post("/jobs", { key, imageName, modelUsed, outputS3Key, mixWeather });
+    
+    const payloads = uploadedFiles.map((file) => ({
+        key: file.key,
+        imageName: file.originalName,
+        modelUsed,
+        mixWeather,
+        outputS3Key: null
+    }));
+    
+    await api.post("/jobs/batch", payloads);
 }

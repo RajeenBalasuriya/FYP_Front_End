@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { uploadToS3, saveToBackend } from "./upload-utils";
+import { uploadBatchToS3, saveBatchToBackend } from "./upload-utils";
 
 interface FileDropzoneProps {
     modelType: "initial" | "trained" | "final";
@@ -22,7 +22,7 @@ interface FileDropzoneProps {
 
 export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneProps) {
     const [isDragging, setIsDragging] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [showErrorDialog, setShowErrorDialog] = useState(false);
@@ -30,18 +30,18 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
     const [mixWeather, setMixWeather] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleFiles = (files: FileList | null) => {
-        if (files && files.length > 0) {
-            setFile(files[0]);
+    const handleFiles = (selectedFiles: FileList | null) => {
+        if (selectedFiles && selectedFiles.length > 0) {
+            setFiles(Array.from(selectedFiles));
         }
     };
 
     // Step 2: File selected
     useEffect(() => {
-        if (file) {
+        if (files.length > 0) {
             onStepChange?.(2);
         }
-    }, [file, onStepChange]);
+    }, [files, onStepChange]);
 
     const showError = (message: string) => {
         setErrorMessage(message);
@@ -52,7 +52,7 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
     const handleTryAgain = () => {
         setShowErrorDialog(false);
         setErrorMessage(null);
-        setFile(null);
+        setFiles([]);
         if (inputRef.current) {
             inputRef.current.value = "";
         }
@@ -62,7 +62,7 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
 
     const handleSuccessClose = () => {
         setShowSuccessDialog(false);
-        setFile(null);
+        setFiles([]);
         if (inputRef.current) {
             inputRef.current.value = "";
         }
@@ -70,7 +70,7 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
     };
 
     const handleUpload = async () => {
-        if (!file) return;
+        if (files.length === 0) return;
 
         // Reset error state and start fresh
         onError?.(false);
@@ -79,14 +79,14 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
 
         try {
             // Step 2-3: Upload to S3 via Lambda
-            const { key } = await uploadToS3(file);
+            const uploaded = await uploadBatchToS3(files);
             onStepChange?.(3);
-            console.log("S3 key:", key);
+            console.log("S3 keys:", uploaded);
 
 
 
             // Step 3-4: Save to backend with model type and mix weather option
-            await saveToBackend(key, file.name, modelType, null, mixWeather);
+            await saveBatchToBackend(uploaded, modelType, mixWeather);
             onStepChange?.(4);
 
 
@@ -180,6 +180,7 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
                     ref={inputRef}
                     type="file"
                     className="hidden"
+                    multiple
                     onChange={(e) => handleFiles(e.target.files)}
                 />
 
@@ -198,12 +199,12 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
                         <path d="M12 12V4m0 0l-4 4m4-4l4 4" />
                     </svg>
 
-                    {file ? (
-                        <p className="font-medium text-foreground">{file.name}</p>
+                    {files.length > 0 ? (
+                        <p className="font-medium text-foreground">{files.length} {files.length === 1 ? 'file' : 'files'} selected</p>
                     ) : (
                         <p className="text-sm">
                             <span className="font-medium text-foreground">Drag & drop</span>{" "}
-                            degraded image here or click to browse
+                            degraded images here or click to browse
                         </p>
                     )}
                 </div>
@@ -224,13 +225,13 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
             {/* Upload Button */}
             <Button
                 className="w-full"
-                disabled={!file || isUploading}
+                disabled={files.length === 0 || isUploading}
                 onClick={handleUpload}
             >
                 {isUploading
                     ? "Uploading..."
-                    : file
-                        ? `Restore: ${file.name}`
+                    : files.length > 0
+                        ? `Restore ${files.length} ${files.length === 1 ? 'Image' : 'Images'}`
                         : "Start Restoration"}
             </Button>
         </div>
