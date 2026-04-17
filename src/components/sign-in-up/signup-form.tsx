@@ -46,7 +46,7 @@ export function SignupForm({
         email,
         password
       })
-      navigate("/dashboard")
+      navigate("/dashboard/view-gallery")
     } catch (err: any) {
       setError(err.message || "Failed to create account")
     } finally {
@@ -138,7 +138,7 @@ export function SignupForm({
             variant="outline"
             type="button"
             onClick={() => {
-              window.location.href = "http://localhost:3000/auth/github";
+              window.location.href = "http://localhost:3005/api/v1/auth/github";
             }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">

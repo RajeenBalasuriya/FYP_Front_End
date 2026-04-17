@@ -32,7 +32,7 @@ export function LoginForm({
 
     try {
       await login({ email, password })
-      navigate("/dashboard")
+      navigate("/dashboard/view-gallery")
     } catch (err: any) {
       setError(err.message || "Failed to login")
     } finally {

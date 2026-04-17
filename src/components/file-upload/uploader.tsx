@@ -72,6 +72,18 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
     const handleUpload = async () => {
         if (files.length === 0) return;
 
+        // Basic frontend validation for image formats
+        const allowedExtensions = ["jpg", "jpeg", "png", "webp"];
+        const invalidFiles = files.filter(file => {
+            const ext = file.name.split(".").pop()?.toLowerCase();
+            return !ext || !allowedExtensions.includes(ext);
+        });
+
+        if (invalidFiles.length > 0) {
+            showError(`Invalid file format: ${invalidFiles.map(f => f.name).join(", ")}. Only JPG, PNG, and WEBP are supported.`);
+            return;
+        }
+
         // Reset error state and start fresh
         onError?.(false);
         onStepChange?.(2);
@@ -83,24 +95,31 @@ export function FileDropzone({ modelType, onStepChange, onError }: FileDropzoneP
             onStepChange?.(3);
             console.log("S3 keys:", uploaded);
 
-
-
             // Step 3-4: Save to backend with model type and mix weather option
             await saveBatchToBackend(uploaded, modelType, mixWeather);
             onStepChange?.(4);
 
-
-
             // Step 5: Success
             onStepChange?.(5);
             setShowSuccessDialog(true);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            showError(error instanceof Error ? error.message : "Unexpected error during upload. Please try again.");
+
+            let message = "Unexpected error during upload. Please try again.";
+
+            // Check for status 400 specifically
+            if (error.response?.status === 400 || (error instanceof Error && error.message.includes("400"))) {
+                message = "Upload failed: Invalid image format or corrupted file. Please ensure you are uploading valid images.";
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
+
+            showError(message);
         } finally {
             setIsUploading(false);
         }
     };
+
 
     return (
         <div className="w-full space-y-4">

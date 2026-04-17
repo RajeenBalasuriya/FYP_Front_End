@@ -14,6 +14,7 @@ import {
   FolderClock,
   Image,
   Pencil,
+  MessageSquare,
 } from "lucide-react"
 
 import { useAuth } from "@/context/auth-context"
@@ -29,15 +30,15 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-
 const data = {
   teams: [
     {
-      name: "Weather  Former",
+      name: "Weather Former",
       logo: GalleryVerticalEnd,
       plan: "Research Project",
-    }
+    },
   ],
+
   navMain: [
     {
       title: "Gallery Management",
@@ -54,7 +55,7 @@ const data = {
           title: "Edit My Gallery",
           url: "/dashboard/edit-gallery",
           icon: Pencil,
-        }
+        },
       ],
     },
     {
@@ -84,22 +85,10 @@ const data = {
       url: "#",
       icon: BookOpen,
       items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
+        { title: "Introduction", url: "#" },
+        { title: "Get Started", url: "#" },
+        { title: "Tutorials", url: "#" },
+        { title: "Changelog", url: "#" },
       ],
     },
     {
@@ -107,25 +96,14 @@ const data = {
       url: "#",
       icon: Settings2,
       items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
+        { title: "General", url: "#" },
+        { title: "Team", url: "#" },
+        { title: "Billing", url: "#" },
+        { title: "Limits", url: "#" },
       ],
     },
   ],
+
   Activity: [
     {
       name: "Job History",
@@ -136,32 +114,41 @@ const data = {
       name: "Analytics",
       url: "#",
       icon: PieChart,
-    }
-
+    },
+    {
+      name: "AI Assistant",
+      url: "/dashboard/chat",
+      icon: MessageSquare,
+    },
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useAuth();
+export function AppSidebar(
+  { ...props }: React.ComponentProps<typeof Sidebar>
+) {
+  const { user } = useAuth()
 
   const userData = {
     name: user?.userName || "Guest",
     email: user?.email || "guest@example.com",
-    avatar: "/avatars/shadcn.jpg", // Fallback or dynamic if available
-  };
+    avatar: "/avatars/shadcn.jpg",
+  }
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects Activity={data.Activity} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser user={userData} />
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )

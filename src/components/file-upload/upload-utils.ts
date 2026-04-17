@@ -71,14 +71,14 @@ export async function saveBatchToBackend(
 ): Promise<void> {
 
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     const payloads = uploadedFiles.map((file) => ({
         key: file.key,
         imageName: file.originalName,
         modelUsed,
         mixWeather,
-        outputS3Key: null
     }));
-    
+
+
     await api.post("/jobs/batch", payloads);
 }

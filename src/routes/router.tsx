@@ -9,6 +9,7 @@ import DashboardOverview from "@/app/dashboard/overview";
 import ViewGalleryPage from "@/app/dashboard/view-gallery/page";
 import EditGalleryPage from "@/app/dashboard/edit-gallery/page";
 import FolderManagementPage from "@/app/dashboard/folder-management/page";
+import ChatPage from "@/app/dashboard/chat/page";
 
 export function AppRouter() {
     return (
@@ -25,6 +26,7 @@ export function AppRouter() {
                     <Route path="view-gallery" element={<ViewGalleryPage />} />
                     <Route path="edit-gallery" element={<EditGalleryPage />} />
                     <Route path="folder-management" element={<FolderManagementPage />} />
+                    <Route path="chat" element={<ChatPage />} />
                 </Route>
             </Route>
 
